@@ -8,10 +8,12 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetMealDishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
@@ -21,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -36,6 +39,8 @@ public class DishServiceImpl implements DishService {
     @Autowired
     private SetMealDishMapper setMealDishMapper;
 
+    @Autowired
+    private SetmealMapper setMealMapper;
     /**
      * 新增菜品和对应的口味
      *
@@ -164,5 +169,38 @@ public class DishServiceImpl implements DishService {
             dishFlavorMapper.insertBatch(flavors);
         }
 
+    }
+
+    /**
+     * 起售、停售菜品
+     *
+     * @param status
+     * @param id
+     */
+    @Override
+    public void startOrStop(Integer status, Long id) {
+        Dish dish = Dish.builder()
+                .status(status)
+                .id(id)
+                .build();
+        dishMapper.update(dish);
+
+        if(status == StatusConstant.DISABLE){
+            // 停售菜品的话需要将相关的套餐也停售
+            List<Long> dishIds = new ArrayList<Long>();
+            dishIds.add(id);
+            List<Long> setMealIds = setMealDishMapper.getSetMealDishIdsByDishIds(dishIds);
+            if(setMealIds != null && setMealIds.size() > 0){
+                for (Long setMealId : setMealIds){
+                    Setmeal setmeal  = Setmeal.builder()
+                            .id(setMealId)
+                            .status(StatusConstant.DISABLE)
+                            .build();
+                    setMealMapper.update(setmeal);
+                }
+            }
+
+
+        }
     }
 }
