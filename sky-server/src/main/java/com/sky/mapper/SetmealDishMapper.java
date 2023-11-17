@@ -5,7 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
 
 @Mapper
-public interface SetMealDishMapper {
+public interface SetmealDishMapper {
 
 
     //select setmeal_id from setmeal_dish where dish_id in (1,2,3,4)
