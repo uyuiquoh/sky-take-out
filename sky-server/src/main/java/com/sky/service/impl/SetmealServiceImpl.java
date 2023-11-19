@@ -2,10 +2,14 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.entity.Dish;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
+import com.sky.exception.SetmealEnableFailedException;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.mapper.SetmealMapper;
@@ -64,7 +68,7 @@ public class SetmealServiceImpl implements SetmealService {
         Long setmealId = setmeal.getId();
 
         List<SetmealDish> setmealDishes = setmealDTO.getSetmealDishes();
-        if (setmealDishes != null && setmealDishes.size() > 0){
+        if (setmealDishes != null && setmealDishes.size() > 0) {
             //保存菜品和套餐关系
             setmealDishes.forEach(setmealDish -> {
                 setmealDish.setSetmealId(setmealId);
@@ -89,7 +93,7 @@ public class SetmealServiceImpl implements SetmealService {
 
         //将查询到的数据封装到VO
         SetmealVO setmealVO = new SetmealVO();
-        BeanUtils.copyProperties(setmeal,setmealVO);
+        BeanUtils.copyProperties(setmeal, setmealVO);
         setmealVO.setSetmealDishes(setmealDishes);
         return setmealVO;
     }
@@ -103,7 +107,7 @@ public class SetmealServiceImpl implements SetmealService {
     @Transactional
     public void updateWithDish(SetmealDTO setmealDTO) {
         Setmeal setmeal = new Setmeal();
-        BeanUtils.copyProperties(setmealDTO,setmeal);
+        BeanUtils.copyProperties(setmealDTO, setmeal);
 
         //修改套餐表进本信息
         setmealMapper.update(setmeal);
@@ -113,12 +117,42 @@ public class SetmealServiceImpl implements SetmealService {
 
         //重新插入菜品数据
         List<SetmealDish> setmealDishes = setmealDTO.getSetmealDishes();
-        if (setmealDishes != null && setmealDishes.size() > 0){
+        if (setmealDishes != null && setmealDishes.size() > 0) {
             //保存菜品和套餐关系
             setmealDishes.forEach(setmealDish -> {
                 setmealDish.setSetmealId(setmealDTO.getId());
             });
             setmealDishMapper.insertBatch(setmealDishes);
         }
+    }
+
+    /**
+     * 套餐起售、停售
+     *
+     * @param status
+     * @param id
+     */
+    @Override
+    @Transactional
+    public void startOrStop(Integer status, Long id) {
+
+        //若起售套餐，需要判断套餐内所有菜品是否都起售
+        if (status == StatusConstant.ENABLE) {
+            List<Dish> dishList = dishMapper.getBySetmealId(id);
+            if (dishList != null && dishList.size() > 0) {
+                dishList.forEach(dish -> {
+                    if (dish.getStatus() == StatusConstant.DISABLE) {
+                        throw new SetmealEnableFailedException(MessageConstant.SETMEAL_ENABLE_FAILED);
+                    }
+                });
+            }
+        }
+
+        Setmeal setmeal = Setmeal.builder()
+                .id(id)
+                .status(status)
+                .build();
+
+        setmealMapper.update(setmeal);
     }
 }
