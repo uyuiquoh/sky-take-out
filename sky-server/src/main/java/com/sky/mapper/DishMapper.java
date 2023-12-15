@@ -43,7 +43,7 @@ public interface DishMapper {
      * @return
      */
     @Select("select * from dish where id = #{id}")
-    Dish getByid(Long id);
+    Dish getById(Long id);
 
     /**
      * 根据主键删除菜品数据

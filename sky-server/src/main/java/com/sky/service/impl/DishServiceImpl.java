@@ -91,7 +91,7 @@ public class DishServiceImpl implements DishService {
     public void deleteBatch(List<Long> ids) {
         //判断当前菜品是否能够删除--是否存在起售中的菜品？
         for (Long id : ids) {
-            Dish dish = dishMapper.getByid(id);
+            Dish dish = dishMapper.getById(id);
             if (dish.getStatus() == StatusConstant.ENABLE) {
                 //当前菜品处于起售中，不能删除
                 throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
@@ -132,7 +132,7 @@ public class DishServiceImpl implements DishService {
     @Override
     public DishVO getByIdWithFlavor(Long id) {
         //根据id查询菜品数据
-        Dish dish = dishMapper.getByid(id);
+        Dish dish = dishMapper.getById(id);
         //根据菜品id查询口味数据
         List<DishFlavor> dishFlavors = dishFlavorMapper.getByDishId(id);
         //将查询到的数据封装到VO
